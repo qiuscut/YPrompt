@@ -268,7 +268,9 @@ async def _initialize_sqlite_if_needed(adapter: SQLiteAdapter, config: Dict = No
             else:
                 logger.warning(f"⚠️  未找到SQLite初始化脚本: {script_path}")
         else:
-            logger.info("✅ SQLite数据库已存在，跳过初始化")
+            logger.info("✅ SQLite数据库已存在，跳过表结构初始化")
+            # 数据库已存在，但仍然需要检查并同步管理员账号
+            await _sync_admin_account(adapter, config)
             
     except Exception as e:
         logger.error(f"❌ SQLite数据库初始化检查失败: {e}")
@@ -277,7 +279,7 @@ async def _initialize_sqlite_if_needed(adapter: SQLiteAdapter, config: Dict = No
 
 async def _create_default_admin(adapter: SQLiteAdapter, config: Dict = None):
     """
-    创建默认管理员账号
+    创建默认管理员账号（仅用于首次初始化）
     从配置文件读取默认账号信息
     
     Args:
@@ -324,4 +326,75 @@ async def _create_default_admin(adapter: SQLiteAdapter, config: Dict = None):
 
     except Exception as e:
         logger.error(f"❌ 创建默认管理员账号失败: {e}")
+        raise
+
+
+async def _sync_admin_account(adapter: SQLiteAdapter, config: Dict = None):
+    """
+    同步管理员账号（每次启动时执行）
+    - 如果配置的管理员用户名对应的账号不存在，则创建
+    - 如果存在，则更新密码（仅当密码哈希不匹配时）
+    
+    这样可以确保环境变量 ADMIN_USERNAME 和 ADMIN_PASSWORD 始终生效
+    
+    Args:
+        adapter: SQLite适配器
+        config: 应用配置
+    """
+    try:
+        # 从配置读取管理员账号信息
+        admin_username = 'admin'
+        admin_password = 'admin123'
+        admin_name = '管理员'
+        
+        if config:
+            admin_username = config.get('DEFAULT_ADMIN_USERNAME', 'admin')
+            admin_password = config.get('DEFAULT_ADMIN_PASSWORD', 'admin123')
+            admin_name = config.get('DEFAULT_ADMIN_NAME', '管理员')
+        
+        # 生成密码哈希
+        import bcrypt
+        password_bytes = admin_password.encode('utf-8')
+        salt = bcrypt.gensalt(rounds=12)
+        password_hash = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+        
+        # 检查管理员账号是否已存在
+        existing_admin = await adapter.get(
+            "SELECT id, password_hash FROM users WHERE username = ? AND auth_type = 'local'",
+            [admin_username]
+        )
+        
+        if existing_admin:
+            # 账号已存在，检查密码是否需要更新
+            # 注意：由于bcrypt每次生成的salt不同，我们需要验证密码而不是直接比较哈希
+            old_hash = existing_admin.get('password_hash', '')
+            
+            # 验证当前密码是否正确
+            try:
+                is_password_correct = bcrypt.checkpw(password_bytes, old_hash.encode('utf-8'))
+            except:
+                is_password_correct = False
+            
+            if not is_password_correct:
+                # 密码不匹配，需要更新
+                await adapter.execute(
+                    "UPDATE users SET password_hash = ?, name = ? WHERE id = ?",
+                    [password_hash, admin_name, existing_admin['id']]
+                )
+                logger.info(f"🔄 管理员账号密码已更新: {admin_username}")
+            else:
+                logger.info(f"✅ 管理员账号配置正确: {admin_username}")
+        else:
+            # 账号不存在，创建新账号
+            await adapter.execute(
+                """
+                INSERT INTO users (username, password_hash, name, auth_type, is_admin, is_active)
+                VALUES (?, ?, ?, 'local', 1, 1)
+                """,
+                [admin_username, password_hash, admin_name]
+            )
+            logger.info(f"✅ 管理员账号创建成功: {admin_username} / {admin_password}")
+    
+    except Exception as e:
+        logger.error(f"❌ 同步管理员账号失败: {e}")
         raise
