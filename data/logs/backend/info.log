@@ -163,3 +163,7 @@
 2025-11-16 09:30:34,479 | INFO | ✅ SQLite连接成功: ../data/yprompt.db
 2025-11-16 09:30:34,480 | INFO | ✅ SQLite数据库已存在，跳过初始化
 2025-11-16 09:30:34,480 | INFO | ✅ 数据库初始化成功: sqlite
+2025-11-16 10:23:09,433 | INFO | ✅ SQLite连接已关闭
+2025-11-16 10:23:09,436 | INFO | ✅ 数据库连接已关闭
+2025-11-16 10:23:09,432 | INFO | Received signal SIGINT. Shutting down.
+2025-11-16 10:23:09,799 | INFO | Server Stopped

@@ -542,7 +542,7 @@ const loadUserPromptFromLibrary = () => {
 }
 
 // 组件挂载时检查是否有需要加载的用户提示词
-import { onMounted, watch } from 'vue'
+import { onMounted } from 'vue'
 onMounted(() => {
   loadUserPromptFromLibrary()
 })
