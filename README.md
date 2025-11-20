@@ -15,14 +15,17 @@ AI提示词生成与管理系统，支持`Linux.do OAuth`和本地用户认证�
 ## 界面
 
 ![](imgs/1.gif)
-
 ![](imgs/2.gif)
-
 ![](imgs/3.gif)
-
 ![](imgs/4.gif)
-
 ![](imgs/5.jpg)
+![](imgs/6.gif)
+![](imgs/7.gif)
+![](imgs/8.gif)
+![](imgs/9.gif)
+![](imgs/10.gif)
+![](imgs/11.gif)
+![](imgs/12.gif)
 
 ## 系统架构
 
