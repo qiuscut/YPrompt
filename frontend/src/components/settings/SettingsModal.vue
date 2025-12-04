@@ -149,7 +149,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import { useSettingsStore } from '@/stores/settingsStore'
 
